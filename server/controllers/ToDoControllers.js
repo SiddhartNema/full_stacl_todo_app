@@ -1,44 +1,34 @@
-const ToDoModel = require("../models/ToDoModel")
+import { validationResult } from "express-validator"
+import ToDo from "../models/ToDo.js"
+import User from "../models/User.js"
+import { StatusCode } from "../utils/constant.js"
+import { jsonGenrate } from "../utils/helpers.js"
 
-module.exports.getToDo = async (req,res) =>{
-    const todo = await ToDoModel.find()
-    res.send(todo)
-}
-
-module.exports.saveToDo = (req,res)=>{
-    const {text} = req.body
-
-    ToDoModel.create({text}).then((data)=>{
-        console.log("added sucessfull")
-        console.log(data)
-        res.send(data)
-    })
-    .catch((err)=>{
-        console.log(err)
-    })
+export const creteToDo = async (req,res)=>{
     
-}
 
-module.exports.deleteToDo = (req,res)=>{
-    const { _id} = req.body
+    const error = validationResult(req)
+    if(!error.isEmpty()){
+        return res.json(jsonGenrate(StatusCode.VALIDATION_ERROR,"TODO IS REQ",error.mapped()))
+    }
 
-    // console.log('id' = req.body)
+    try {
+        const result = await ToDo.create({
+            userId:req.userId,
+            desc: req.body.desc,
 
-    ToDoModel.findByIdAndDelete(_id).then(()=>{
-        res.set(201).send("Delete Sucessfull")
-        .catch((err)=>{
-            console.log(err)
+
         })
-    })
-}
-
-module.exports.updateToDo = (req,res)=>{
-    const { _id, text} = req.body
-
-    ToDoModel.findByIdAndUpdate(_id, { text }).then(()=>{
-        res.set(201).send("update sucessfull")
-        .catch((err)=>{
-            console.log(err)
-        })
-    })
+        if(result){
+            const user = await User.findOneAndUpdate({ _id:req.userId }, 
+                {
+                    $push:{todos:result}
+                })
+                return res.json(jsonGenrate(StatusCode.SUCCESS,"TODO CREATED", result))
+        }
+        
+    } catch (error) {
+        return res.json(jsonGenrate(StatusCode.SUCCESS,"something went wrong", error))
+        
+    }
 }

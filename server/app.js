@@ -1,6 +1,7 @@
 import express from "express"
 import mongoose from "mongoose"
-import apiRoute from "./routes/api.js"
+import Authmiddleware from "./middleware/Authmiddleware.js"
+import apiRoute, { apiProtected } from "./routes/api.js"
 import { DB_CONNECT } from "./utils/constant.js"
 
 
@@ -13,6 +14,8 @@ app.use(express.json)
 
 
 app.use('/api/',apiRoute)
+app.use('/api/',apiProtected)
+app.use('/api/',Authmiddleware,apiProtected)
 
 
 app.listen(PORT, ()=>{
